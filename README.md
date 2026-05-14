@@ -4,6 +4,77 @@
 
 当前版本偏稳妥：一天几个链接、手动运行、本地保存，不做批量抓取。
 
+## 流程图
+
+![ContentVault URL 到 Obsidian 二创报告流程](docs/contentvault_flow.svg)
+
+## 手工触发命令
+
+当前从 URL 到 Obsidian 二创报告，最少需要手工触发 3 个动作。
+
+### 1. 归档链接并下载视频
+
+如果使用 Downie 4 下载并自动导入视频：
+
+```bash
+python3 -m content_mvp add "复制来的链接" --open-downie
+```
+
+如果使用 `yt-dlp` 下载视频：
+
+```bash
+python3 -m content_mvp add "复制来的链接" --download-media
+```
+
+抖音等平台经常需要浏览器登录态，可以加浏览器 cookies：
+
+```bash
+python3 -m content_mvp add "复制来的链接" --download-media --cookies-from-browser chrome
+```
+
+归档完成后会生成：
+
+```text
+data/YYYY-MM-DD/platform_slug/
+```
+
+如果视频已经进入 `media/`，工具会生成或刷新：
+
+```text
+analysis/frames/
+analysis/codex_brief.md
+```
+
+### 2. 让 Codex 生成二创报告
+
+把素材目录发给 Codex，让它基于 `analysis/codex_brief.md`、抽帧和正文生成最终报告：
+
+```text
+基于 data/YYYY-MM-DD/platform_slug/analysis/codex_brief.md 生成 creator_report.md
+```
+
+生成后文件位置是：
+
+```text
+data/YYYY-MM-DD/platform_slug/analysis/creator_report.md
+```
+
+### 3. 更新到 Obsidian
+
+把最终二创报告同步到 Obsidian 对应素材笔记：
+
+```bash
+python3 -m content_mvp export-obsidian data/YYYY-MM-DD/platform_slug --vault "/Users/jianxiongyin/MacTools/Obsidian/本地纪事/14_ContentVault"
+```
+
+如果要更新某一天的所有素材：
+
+```bash
+python3 -m content_mvp export-obsidian data/YYYY-MM-DD --vault "/Users/jianxiongyin/MacTools/Obsidian/本地纪事/14_ContentVault"
+```
+
+导出时会优先按 `local_folder` / `source_url` 更新已有笔记，避免重复生成 `-2.md` 文件。
+
 ## 快速开始
 
 ```bash
@@ -24,6 +95,7 @@ content.md      # 提取出的正文和页面信息
 summary.md      # 二创分析草稿
 raw.html        # 原始 HTML，方便以后复查
 media/          # 可选媒体下载目录
+analysis/       # Codex 分析包和视频抽帧
 ```
 
 ## 常用命令
@@ -90,6 +162,20 @@ python3 -m content_mvp add "复制来的链接" --browser
 ```
 
 这个功能需要本机已经安装 Python 版 Playwright。动态平台页面经常需要登录，本工具只做本地个人归档，不绕过平台权限。
+
+对已经归档的素材生成二创分析包：
+
+```bash
+python3 -m content_mvp analyze data/2026-05-14/douyin_xxx
+```
+
+也可以直接分析某一天的所有素材，并同步导出到 Obsidian：
+
+```bash
+python3 -m content_mvp analyze data/2026-05-14 --export-obsidian "/Users/jianxiongyin/MacTools/Obsidian/本地纪事/14_ContentVault"
+```
+
+如果素材目录里有本地视频，`analyze` 会用 `ffmpeg` 抽取关键帧到 `analysis/frames/`，并生成 `analysis/codex_brief.md`。这份文件包含标题、链接、本地视频路径、抽帧画面和给 Codex 的分析任务，方便继续做剧情拆解、爆点提炼、标题和口播脚本。
 
 可选增强依赖：
 

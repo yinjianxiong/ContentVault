@@ -6,6 +6,7 @@ import sys
 import time
 from pathlib import Path
 
+from .analyze import analyze_archive, analyze_item
 from .items import resolve_item_title
 from .media import import_recent_downloaded_media, open_in_downie, summarize_media_download
 from .obsidian import export_to_obsidian
@@ -90,6 +91,24 @@ def build_parser() -> argparse.ArgumentParser:
         help="Obsidian target folder or vault path",
     )
 
+    analyze = subparsers.add_parser(
+        "analyze",
+        help="Refresh summaries and create a Codex analysis packet for archived items",
+    )
+    analyze.add_argument("path", help="An item directory or a day directory")
+    analyze.add_argument(
+        "--frames",
+        type=int,
+        default=6,
+        help="Number of video frames to sample into analysis/frames. Defaults to 6.",
+    )
+    analyze.add_argument(
+        "--export-obsidian",
+        default="",
+        metavar="VAULT",
+        help="Optionally export analyzed items to an Obsidian folder after analysis.",
+    )
+
     return parser
 
 
@@ -133,6 +152,7 @@ def main(argv: list[str] | None = None) -> int:
                 )
                 if import_result["status"] == "imported":
                     _update_media_download_meta(result.item_dir, import_result)
+                    analyze_item(result.item_dir)
                     print(f"已导入媒体: {result.item_dir / import_result['path']}")
                 elif import_result["status"] == "not_found":
                     print(f"未自动导入媒体: {import_result['reason']}")
@@ -152,6 +172,22 @@ def main(argv: list[str] | None = None) -> int:
             print(f"  标题: {resolve_item_title(item_dir, meta)}")
             print(f"  平台: {meta.get('platform') or ''}")
             print(f"  链接: {meta.get('final_url') or meta.get('requested_url') or ''}")
+        return 0
+
+    if args.command == "analyze":
+        results = analyze_archive(Path(args.path), frame_count=args.frames)
+        for result in results:
+            print(f"已分析: {result.item_dir}")
+            print(f"  标题: {result.title}")
+            print(f"  总结: {result.summary_path}")
+            print(f"  Codex 分析包: {result.brief_path}")
+            if result.frame_paths:
+                print(f"  抽帧: {len(result.frame_paths)} 张")
+        if args.export_obsidian:
+            notes = export_to_obsidian(Path(args.path), Path(args.export_obsidian))
+            for note in notes:
+                print(f"已导出: {note}")
+            print(f"共导出 {len(notes)} 条笔记")
         return 0
 
     if args.command == "export-obsidian":

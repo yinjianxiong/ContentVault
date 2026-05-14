@@ -10,6 +10,7 @@ from urllib.parse import urlparse
 
 from .extract import extract_page
 from .fetch import FetchResult, fetch_url, fetch_with_browser
+from .items import resolve_item_title
 from .media import try_download_media
 from .platforms import detect_platform
 from .summarize import build_summary
@@ -69,7 +70,7 @@ def archive_link(url: str, options: ArchiveOptions) -> ArchiveResult:
         encoding="utf-8",
     )
     (item_dir / "summary.md").write_text(
-        build_summary(meta, extracted),
+        build_summary(meta, extracted, title=resolve_item_title(item_dir, meta)),
         encoding="utf-8",
     )
 

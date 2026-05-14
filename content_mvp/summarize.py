@@ -3,8 +3,8 @@ from __future__ import annotations
 import re
 
 
-def build_summary(meta: dict, extracted: dict) -> str:
-    title = meta.get("title") or "未提取到标题"
+def build_summary(meta: dict, extracted: dict, *, title: str = "") -> str:
+    title = title or meta.get("title") or "未提取到标题"
     description = meta.get("description") or ""
     text = extracted.get("text", "")
     paragraphs = _important_paragraphs(text)
@@ -113,4 +113,3 @@ def _clip(text: str, limit: int) -> str:
     if len(text) <= limit:
         return text
     return text[: limit - 1].rstrip() + "..."
-
