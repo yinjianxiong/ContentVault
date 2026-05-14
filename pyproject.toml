@@ -1,0 +1,9 @@
+[project]
+name = "content-mvp"
+version = "0.1.0"
+description = "Local MVP for archiving and summarizing links from Douyin, Toutiao, Xiaohongshu, and general web pages."
+requires-python = ">=3.10"
+
+[project.scripts]
+content-mvp = "content_mvp.cli:main"
+

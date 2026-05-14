@@ -1,0 +1,7 @@
+# Optional helpers. The MVP works without these packages.
+# yt-dlp enables --download-media.
+yt-dlp
+
+# playwright enables --browser.
+playwright
+
