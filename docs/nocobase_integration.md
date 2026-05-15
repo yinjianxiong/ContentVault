@@ -4,7 +4,7 @@
 
 ## 表 1: URL 收集表
 
-建议表名: `url_submissions`
+建议表名: `ai_url_submissions`
 
 这张表只负责收集和排队，不直接存大段分析内容。
 
@@ -40,13 +40,13 @@
 
 ## 表 2: 处理结果展示表
 
-建议表名: `processed_assets`
+建议表名: `ai_processed_assets`
 
 这张表面向预览、下载和二创分析阅读。它和 URL 收集表建议是一对一关系，但保留成多对一也可以，方便同一个 URL 未来多版本重跑。
 
 | 字段 | 类型 | 必填 | 说明 |
 | --- | --- | --- | --- |
-| `url_submission` | 关系 | 是 | 关联 `url_submissions` |
+| `url_submission` | 关系 | 是 | 关联 `ai_url_submissions` |
 | `source_url` | URL / 文本 | 是 | 原始 URL |
 | `final_url` | URL / 文本 | 否 | 抓取后的最终 URL |
 | `platform` | 单选 | 是 | 平台 |
@@ -84,7 +84,7 @@
 ## 关系设计
 
 ```text
-url_submissions 1 ---- 0..n processed_assets
+ai_url_submissions 1 ---- 0..n ai_processed_assets
 ```
 
 第一阶段建议按“一条 URL 只生成一个展示记录”来做。以后如果需要重跑不同分析版本，再允许一条 URL 关联多条展示记录。
@@ -107,12 +107,12 @@ pending / processing
 
 后台 job 的推荐逻辑:
 
-1. 从 `url_submissions` 取 `status = pending` 的记录，按 `priority desc, createdAt asc` 排序。
+1. 从 `ai_url_submissions` 取 `status = pending` 的记录，按 `priority desc, createdAt asc` 排序。
 2. 将记录更新为 `processing`，写入 `picked_at`。
 3. 调用现有归档流程，把素材保存到 `data/YYYY-MM-DD/...`。
 4. 下载或导入视频，生成 `media/`。
 5. 调用 `analyze`，生成 `summary.md`、`analysis/codex_brief.md`、抽帧。
-6. 生成 `processed_assets` payload 并写入展示表。
+6. 生成 `ai_processed_assets` payload 并写入展示表。
 7. 将 URL 收集记录更新为 `succeeded` 和 `processed_at`。
 8. 任一步失败则写 `failed`、`last_error`、`retry_count + 1`。
 
@@ -161,4 +161,54 @@ pending / processing
 python3 -m content_mvp nocobase-payload data/YYYY-MM-DD/platform_slug
 ```
 
-它会读取素材目录并输出适合写入 `processed_assets` 的 JSON。后续接 NocoBase API 时，job 只需要把这个 JSON POST 到对应数据表即可。
+它会读取素材目录并输出适合写入 `ai_processed_assets` 的 JSON。
+
+## 直连数据库 + Prefect
+
+既然 NocoBase 和 job 共用 MySQL，推荐让 job 直接连数据库，不再绕一层 NocoBase HTTP API:
+
+```python
+from prefect_sqlalchemy import SqlAlchemyConnector
+
+database_block = SqlAlchemyConnector.load("local-mysql-3307")
+```
+
+当前项目准备使用 Prefect flow 调度这条链路:
+
+```text
+ai_url_submissions
+  -> Prefect flow 拉取 pending
+  -> 本地归档 / 下载 / analyze
+  -> ai_processed_assets
+  -> 回写 ai_url_submissions.status
+```
+
+推荐给 `ai_processed_assets.url_submission_id` 增加唯一索引，这样 flow 可以用 upsert 覆盖同一条提交的最新处理结果。
+
+Prefect 适合作为调度层的原因:
+
+- flow 本身保留每次运行历史、失败和重试。
+- deployment 可以挂 schedule，让系统按固定间隔自动拉取待处理 URL。
+- 后续如果下载、分析、同步 Obsidian 分成多个 task，也容易在 UI 里看清每一步状态。
+
+项目里提供了初始 flow:
+
+```text
+content_mvp/prefect_jobs.py
+```
+
+默认 block 名:
+
+```text
+local-mysql-3307
+```
+
+本地先手工执行一次可以用:
+
+```python
+from content_mvp.prefect_jobs import process_pending_urls_flow
+
+process_pending_urls_flow(limit=10)
+```
+
+正式部署时，再把这个 flow 注册为 Prefect deployment，并给 deployment 配置 schedule。

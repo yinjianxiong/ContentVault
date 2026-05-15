@@ -79,8 +79,8 @@ python3 -m content_mvp export-obsidian data/YYYY-MM-DD --vault "/Users/jianxiong
 
 多人录入 URL 时，建议用 NocoBase 搭建两张表：
 
-- `url_submissions`: URL 收集和处理队列表。
-- `processed_assets`: 处理完成后的素材展示表。
+- `ai_url_submissions`: URL 收集和处理队列表。
+- `ai_processed_assets`: 处理完成后的素材展示表。
 
 详细字段设计见:
 
@@ -88,7 +88,7 @@ python3 -m content_mvp export-obsidian data/YYYY-MM-DD --vault "/Users/jianxiong
 docs/nocobase_integration.md
 ```
 
-后端 job 处理完素材目录后，可以先生成要写回 `processed_assets` 的 JSON:
+后端 job 处理完素材目录后，可以先生成要写回 `ai_processed_assets` 的 JSON:
 
 ```bash
 python3 -m content_mvp nocobase-payload data/YYYY-MM-DD/platform_slug
@@ -98,6 +98,20 @@ python3 -m content_mvp nocobase-payload data/YYYY-MM-DD/platform_slug
 
 ```bash
 python3 -m content_mvp nocobase-payload data/YYYY-MM-DD
+```
+
+如果 NocoBase 与 job 共用 MySQL，推荐 job 直接连库，并把调度交给 Prefect。当前默认数据库 block 名按下面约定:
+
+```python
+from prefect_sqlalchemy import SqlAlchemyConnector
+
+database_block = SqlAlchemyConnector.load("local-mysql-3307")
+```
+
+初始 flow 骨架见:
+
+```text
+content_mvp/prefect_jobs.py
 ```
 
 ## 快速开始

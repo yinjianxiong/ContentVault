@@ -5,3 +5,6 @@ yt-dlp
 # playwright enables --browser.
 playwright
 
+# Prefect schedules direct-database background jobs.
+prefect
+prefect-sqlalchemy
