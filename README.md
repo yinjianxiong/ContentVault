@@ -12,6 +12,43 @@ ContentVault 用来把同事发现的内容 URL 自动归档成可预览、可�
 
 ## 全自动化流程
 
+1. 同事在 NocoBase 录入一个内容 URL。
+2. NocoBase 将这条记录写入 `ai_url_submissions`，初始状态为 `pending`。
+3. Prefect deployment 按计划触发 `process_pending_urls_flow`。
+4. flow 从 `ai_url_submissions` 中读取待处理记录，按 `priority` 和 `createdAt` 排序。
+5. flow 把当前记录更新为 `processing`，并写入 `picked_at`。
+6. flow 调用 `archive_link`，抓取页面并创建本地素材目录:
+
+```text
+data/YYYY-MM-DD/platform_slug/
+```
+
+7. 归档阶段先生成基础文件:
+
+```text
+meta.json
+content.md
+summary.md
+raw.html
+```
+
+8. 如果本次 flow 开启了 Downie 自动下载，则会调起 `Downie 4.app`，监听 `~/Downloads`，等待新视频下载完成后复制到当前素材目录的 `media/`，并更新 `meta.json.media_download`。
+9. 如果未启用 Downie，流程会跳过本地媒体导入，继续做基础分析。
+10. flow 执行 `analyze_item`，生成:
+
+```text
+summary.md
+analysis/codex_brief.md
+analysis/frames/
+```
+
+11. flow 调用 `build_processed_asset_payload`，把素材目录整理成适合数据库展示的 payload，并 upsert 到 `ai_processed_assets`。
+12. flow 将 `ai_url_submissions` 中对应记录更新为 `succeeded`，写入 `processed_at`。
+13. 相关人员在 NocoBase 素材展示页查看结果，包括预览、下载和分析内容。
+14. 如果任一步失败，flow 会把记录更新为 `failed`，同时写入 `retry_count + 1` 和 `last_error`，等待后续 Prefect 重试或人工处理。
+
+配套图示:
+
 ![ContentVault 全自动化流程](docs/contentvault_automation_flow.svg)
 
 Mermaid 源文件和文字版说明:
