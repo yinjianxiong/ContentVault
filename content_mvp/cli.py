@@ -8,7 +8,12 @@ from pathlib import Path
 
 from .analyze import analyze_archive, analyze_item
 from .items import resolve_item_title
-from .media import import_recent_downloaded_media, open_in_downie, summarize_media_download
+from .media import (
+    import_recent_downloaded_media,
+    open_in_downie,
+    summarize_media_download,
+    update_media_download_meta,
+)
 from .nocobase import build_processed_asset_payload
 from .obsidian import export_to_obsidian
 from .pipeline import ArchiveOptions, archive_link
@@ -158,7 +163,7 @@ def main(argv: list[str] | None = None) -> int:
                     timeout_seconds=args.downie_wait,
                 )
                 if import_result["status"] == "imported":
-                    _update_media_download_meta(result.item_dir, import_result)
+                    update_media_download_meta(result.item_dir, import_result)
                     analyze_item(result.item_dir)
                     print(f"已导入媒体: {result.item_dir / import_result['path']}")
                 elif import_result["status"] == "not_found":
@@ -220,16 +225,6 @@ def _iter_item_dirs(path: Path) -> list[Path]:
     if (path / "meta.json").exists():
         return [path]
     return sorted(parent for parent in path.iterdir() if (parent / "meta.json").exists())
-
-
-def _update_media_download_meta(item_dir: Path, media_result: dict[str, str]) -> None:
-    meta_path = item_dir / "meta.json"
-    meta = json.loads(meta_path.read_text(encoding="utf-8"))
-    meta["media_download"] = media_result
-    meta_path.write_text(
-        json.dumps(meta, ensure_ascii=False, indent=2),
-        encoding="utf-8",
-    )
 
 
 if __name__ == "__main__":

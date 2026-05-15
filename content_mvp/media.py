@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import shutil
 import subprocess
 import time
@@ -128,3 +129,13 @@ def import_recent_downloaded_media(
         "status": "not_found",
         "reason": f"No completed media file appeared in {downloads_dir}",
     }
+
+
+def update_media_download_meta(item_dir: Path, media_result: dict[str, str]) -> None:
+    meta_path = item_dir / "meta.json"
+    meta = json.loads(meta_path.read_text(encoding="utf-8"))
+    meta["media_download"] = media_result
+    meta_path.write_text(
+        json.dumps(meta, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )

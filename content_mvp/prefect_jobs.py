@@ -1,10 +1,16 @@
 from __future__ import annotations
 
 import json
+import time
 from pathlib import Path
 from typing import Any
 
 from .analyze import analyze_item
+from .media import (
+    import_recent_downloaded_media,
+    open_in_downie,
+    update_media_download_meta,
+)
 from .nocobase import build_processed_asset_payload
 from .pipeline import ArchiveOptions, archive_link
 
@@ -127,6 +133,9 @@ def process_pending_urls_flow(
     db_block_name: str = "local-mysql-3307",
     download_media: bool = False,
     cookies_from_browser: str = "",
+    use_downie: bool = False,
+    downie_wait: int = 180,
+    downloads_dir: str = "~/Downloads",
 ) -> list[dict[str, Any]]:
     """Process pending NocoBase URL submissions through the local pipeline."""
     return _build_flow()(
@@ -135,6 +144,9 @@ def process_pending_urls_flow(
         db_block_name=db_block_name,
         download_media=download_media,
         cookies_from_browser=cookies_from_browser,
+        use_downie=use_downie,
+        downie_wait=downie_wait,
+        downloads_dir=downloads_dir,
     )
 
 
@@ -149,6 +161,9 @@ def _build_flow():
         db_block_name: str = "local-mysql-3307",
         download_media: bool = False,
         cookies_from_browser: str = "",
+        use_downie: bool = False,
+        downie_wait: int = 180,
+        downloads_dir: str = "~/Downloads",
     ) -> list[dict[str, Any]]:
         from prefect_sqlalchemy import SqlAlchemyConnector
 
@@ -177,6 +192,14 @@ def _build_flow():
                             cookies_from_browser=cookies_from_browser,
                         ),
                     )
+                    downie_result = {}
+                    if use_downie:
+                        downie_result = _download_with_downie(
+                            submission["url"],
+                            archive.item_dir,
+                            downloads_dir=Path(downloads_dir).expanduser(),
+                            timeout_seconds=downie_wait,
+                        )
                     analyze_item(archive.item_dir)
                     payload = build_processed_asset_payload(archive.item_dir)
                     database_block.execute(
@@ -192,6 +215,7 @@ def _build_flow():
                             "submission_id": submission_id,
                             "status": "succeeded",
                             "item_dir": str(archive.item_dir),
+                            "downie": downie_result,
                         }
                     )
                 except Exception as exc:  # noqa: BLE001 - flow must persist failures.
@@ -239,3 +263,29 @@ def _to_db_params(submission_id: int, payload: dict[str, Any]) -> dict[str, Any]
         "cover_paths": json.dumps(payload["cover_paths"], ensure_ascii=False),
         "raw_meta": json.dumps(payload["raw_meta"], ensure_ascii=False),
     }
+
+
+def _download_with_downie(
+    url: str,
+    item_dir: Path,
+    *,
+    downloads_dir: Path,
+    timeout_seconds: int,
+) -> dict[str, str]:
+    downie_started_at = time.time()
+    launch_result = open_in_downie(url)
+    if launch_result["status"] != "ok":
+        return {
+            "status": "failed",
+            "reason": launch_result.get("stderr") or launch_result.get("stdout") or "",
+        }
+
+    import_result = import_recent_downloaded_media(
+        downloads_dir,
+        item_dir / "media",
+        since_timestamp=downie_started_at,
+        timeout_seconds=timeout_seconds,
+    )
+    if import_result["status"] == "imported":
+        update_media_download_meta(item_dir, import_result)
+    return import_result

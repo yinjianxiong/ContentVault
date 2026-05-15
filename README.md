@@ -114,6 +114,16 @@ database_block = SqlAlchemyConnector.load("local-mysql-3307")
 content_mvp/prefect_jobs.py
 ```
 
+如果 Prefect worker 跑在这台有桌面会话的 Mac 上，可以让 flow 调起 Downie 4 并自动把下载结果导入当前素材目录:
+
+```python
+from content_mvp.prefect_jobs import process_pending_urls_flow
+
+process_pending_urls_flow(limit=10, use_downie=True, downie_wait=180)
+```
+
+这条链路依赖本机 GUI 会话；如果 worker 跑在无头服务器上，Downie 方案就不适用。
+
 你当前从 NocoBase 生成的默认表字段多是 `varchar(255)`，在接 job 前建议先执行或按需参考:
 
 ```text

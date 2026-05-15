@@ -238,4 +238,17 @@ from content_mvp.prefect_jobs import process_pending_urls_flow
 process_pending_urls_flow(limit=10)
 ```
 
+如果 Prefect worker 就运行在安装了 Downie 4 的这台 Mac 上，可以开启自动下载导入:
+
+```python
+process_pending_urls_flow(limit=10, use_downie=True, downie_wait=180)
+```
+
+Downie 集成的运行前提:
+
+- worker 运行在 macOS 本机，不是远程无头服务器。
+- 当前用户会话能正常调起 `Downie 4.app`。
+- Downie 的下载目录与 flow 参数 `downloads_dir` 一致，默认是 `~/Downloads`。
+- 同一时间最好只让一个 worker 处理 Downie 下载，避免多个任务同时监听 `~/Downloads` 时互相拿错文件。
+
 正式部署时，再把这个 flow 注册为 Prefect deployment，并给 deployment 配置 schedule。
