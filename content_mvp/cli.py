@@ -9,6 +9,7 @@ from pathlib import Path
 from .analyze import analyze_archive, analyze_item
 from .items import resolve_item_title
 from .media import import_recent_downloaded_media, open_in_downie, summarize_media_download
+from .nocobase import build_processed_asset_payload
 from .obsidian import export_to_obsidian
 from .pipeline import ArchiveOptions, archive_link
 
@@ -109,6 +110,12 @@ def build_parser() -> argparse.ArgumentParser:
         help="Optionally export analyzed items to an Obsidian folder after analysis.",
     )
 
+    nocobase_payload = subparsers.add_parser(
+        "nocobase-payload",
+        help="Print processed_assets JSON payloads for archived items",
+    )
+    nocobase_payload.add_argument("path", help="An item directory or a day directory")
+
     return parser
 
 
@@ -195,6 +202,14 @@ def main(argv: list[str] | None = None) -> int:
         for note in notes:
             print(f"已导出: {note}")
         print(f"共导出 {len(notes)} 条笔记")
+        return 0
+
+    if args.command == "nocobase-payload":
+        payloads = [
+            build_processed_asset_payload(item_dir)
+            for item_dir in _iter_item_dirs(Path(args.path))
+        ]
+        print(json.dumps(payloads, ensure_ascii=False, indent=2))
         return 0
 
     parser.print_help()

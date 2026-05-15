@@ -75,6 +75,31 @@ python3 -m content_mvp export-obsidian data/YYYY-MM-DD --vault "/Users/jianxiong
 
 导出时会优先按 `local_folder` / `source_url` 更新已有笔记，避免重复生成 `-2.md` 文件。
 
+## NocoBase 集成
+
+多人录入 URL 时，建议用 NocoBase 搭建两张表：
+
+- `url_submissions`: URL 收集和处理队列表。
+- `processed_assets`: 处理完成后的素材展示表。
+
+详细字段设计见:
+
+```text
+docs/nocobase_integration.md
+```
+
+后端 job 处理完素材目录后，可以先生成要写回 `processed_assets` 的 JSON:
+
+```bash
+python3 -m content_mvp nocobase-payload data/YYYY-MM-DD/platform_slug
+```
+
+也可以生成某一天的全部 payload:
+
+```bash
+python3 -m content_mvp nocobase-payload data/YYYY-MM-DD
+```
+
 ## 快速开始
 
 ```bash
