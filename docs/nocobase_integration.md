@@ -187,13 +187,24 @@ ai_url_submissions
 
 ## 当前实际 DDL 的必要调整
 
-你当前从 NocoBase 生成出来的两张表字段名已经够用，但类型还偏“默认表单字段”，不适合承载处理结果:
+你已经把 `ai_processed_assets` 的核心字段调整到适合 job 使用的类型了:
 
-- `summary_md`、`codex_brief_md`、`creator_report_md`、`raw_meta` 不能继续是 `varchar(255)`。
-- `media_paths`、`cover_paths` 建议改成 `JSON`。
-- `retry_count`、`file_size_bytes`、`duration_seconds` 建议改成数值类型。
-- `picked_at`、`processed_at` 建议改成 `DATETIME(3)`。
-- `url_submission` 建议改成 `BIGINT`，并加唯一索引。
+- `url_submission` 是 `BIGINT`。
+- `archive_date` 是 `DATE`。
+- `media_paths`、`cover_paths` 是 `JSON`。
+- `duration_seconds` 是 `DECIMAL(10, 3)`。
+- `file_size_bytes` 是 `BIGINT`。
+- `summary_md`、`codex_brief_md`、`creator_report_md` 是 `TEXT`。
+
+`raw_meta` 目前保留为 `TEXT` 也可以正常工作；如果后面需要在 MySQL 里按元数据字段检索，再改成 `JSON` 更合适。
+
+`ai_url_submissions` 也已经调整到适合 job 使用的类型:
+
+- `submit_note` 是 `TEXT`。
+- `duplicate_of` 是 `BIGINT`。
+- `retry_count` 是 `INT NOT NULL DEFAULT 0`。
+- `last_error` 是 `TEXT`。
+- `picked_at`、`processed_at` 是 `DATETIME(3)`。
 
 项目里附了一份按你当前 DDL 写好的迁移 SQL:
 

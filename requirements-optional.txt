@@ -8,3 +8,4 @@ playwright
 # Prefect schedules direct-database background jobs.
 prefect
 prefect-sqlalchemy
+pymysql
