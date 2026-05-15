@@ -8,6 +8,12 @@
 
 ![ContentVault URL 到 Obsidian 二创报告流程](docs/contentvault_flow.svg)
 
+全自动化版本见:
+
+```text
+docs/contentvault_automation_flow.md
+```
+
 ## 手工触发命令
 
 当前从 URL 到 Obsidian 二创报告，最少需要手工触发 3 个动作。
