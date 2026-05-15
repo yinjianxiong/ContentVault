@@ -53,7 +53,7 @@ WHERE id = :submission_id
 
 UPSERT_PROCESSED_ASSET_SQL = """
 INSERT INTO ai_processed_assets (
-    url_submission_id,
+    url_submission,
     source_url,
     final_url,
     platform,
@@ -75,7 +75,7 @@ INSERT INTO ai_processed_assets (
     createdAt,
     updatedAt
 ) VALUES (
-    :url_submission_id,
+    :url_submission,
     :source_url,
     :final_url,
     :platform,
@@ -233,7 +233,7 @@ def _submission_from_row(row: Any) -> dict[str, Any]:
 
 def _to_db_params(submission_id: int, payload: dict[str, Any]) -> dict[str, Any]:
     return {
-        "url_submission_id": submission_id,
+        "url_submission": str(submission_id),
         **payload,
         "media_paths": json.dumps(payload["media_paths"], ensure_ascii=False),
         "cover_paths": json.dumps(payload["cover_paths"], ensure_ascii=False),

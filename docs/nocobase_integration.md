@@ -46,7 +46,7 @@
 
 | 字段 | 类型 | 必填 | 说明 |
 | --- | --- | --- | --- |
-| `url_submission_id` | 整数 / 外键 | 是 | 物理列，关联 `ai_url_submissions.id`，供 job 直连数据库使用 |
+| `url_submission` | 整数 / 外键 | 是 | 当前 NocoBase 已生成的物理列，关联 `ai_url_submissions.id` |
 | `source_url` | URL / 文本 | 是 | 原始 URL |
 | `final_url` | URL / 文本 | 否 | 抓取后的最终 URL |
 | `platform` | 单选 | 是 | 平台 |
@@ -70,7 +70,7 @@
 
 推荐索引:
 
-- `url_submission_id`。
+- `url_submission`。
 - `platform + archive_date`。
 - `title` 普通索引，方便搜索。
 
@@ -183,8 +183,23 @@ ai_url_submissions
   -> 回写 ai_url_submissions.status
 ```
 
-推荐给 `ai_processed_assets.url_submission_id` 增加唯一索引，这样 flow 可以用 upsert 覆盖同一条提交的最新处理结果。
-在 NocoBase 里即使再配置关系字段，也建议先确认数据库中确实存在同名物理列 `url_submission_id`。
+推荐给 `ai_processed_assets.url_submission` 增加唯一索引，这样 flow 可以用 upsert 覆盖同一条提交的最新处理结果。
+
+## 当前实际 DDL 的必要调整
+
+你当前从 NocoBase 生成出来的两张表字段名已经够用，但类型还偏“默认表单字段”，不适合承载处理结果:
+
+- `summary_md`、`codex_brief_md`、`creator_report_md`、`raw_meta` 不能继续是 `varchar(255)`。
+- `media_paths`、`cover_paths` 建议改成 `JSON`。
+- `retry_count`、`file_size_bytes`、`duration_seconds` 建议改成数值类型。
+- `picked_at`、`processed_at` 建议改成 `DATETIME(3)`。
+- `url_submission` 建议改成 `BIGINT`，并加唯一索引。
+
+项目里附了一份按你当前 DDL 写好的迁移 SQL:
+
+```text
+docs/nocobase_mysql_migration.sql
+```
 
 Prefect 适合作为调度层的原因:
 

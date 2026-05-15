@@ -114,6 +114,12 @@ database_block = SqlAlchemyConnector.load("local-mysql-3307")
 content_mvp/prefect_jobs.py
 ```
 
+你当前从 NocoBase 生成的默认表字段多是 `varchar(255)`，在接 job 前建议先执行或按需参考:
+
+```text
+docs/nocobase_mysql_migration.sql
+```
+
 ## 快速开始
 
 ```bash
