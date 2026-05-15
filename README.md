@@ -124,6 +124,8 @@ process_pending_urls_flow(limit=10, use_downie=True, downie_wait=180)
 
 这条链路依赖本机 GUI 会话；如果 worker 跑在无头服务器上，Downie 方案就不适用。
 
+运行限制: Downie 4 是 GUI 应用，所以 Prefect worker 必须运行在同一台有图形会话的 Mac 上，并且当前会话能够调起 `Downie 4.app`。如果未来 worker 迁移到远程 Linux 或无头会话，这条 Downie 自动下载链路将不可用，需要改用别的下载方案。
+
 你当前从 NocoBase 生成的默认表字段多是 `varchar(255)`，在接 job 前建议先执行或按需参考:
 
 ```text

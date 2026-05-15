@@ -251,4 +251,6 @@ Downie 集成的运行前提:
 - Downie 的下载目录与 flow 参数 `downloads_dir` 一致，默认是 `~/Downloads`。
 - 同一时间最好只让一个 worker 处理 Downie 下载，避免多个任务同时监听 `~/Downloads` 时互相拿错文件。
 
+运行限制: Downie 4 是 GUI 应用，所以 Prefect worker 必须运行在同一台有图形会话的 Mac 上，并且当前会话能够调起 `Downie 4.app`。如果未来 worker 迁移到远程 Linux 或无头会话，这条 Downie 自动下载链路将不可用，需要改用别的下载方案。
+
 正式部署时，再把这个 flow 注册为 Prefect deployment，并给 deployment 配置 schedule。
