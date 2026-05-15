@@ -46,7 +46,7 @@
 
 | 字段 | 类型 | 必填 | 说明 |
 | --- | --- | --- | --- |
-| `url_submission` | 关系 | 是 | 关联 `ai_url_submissions` |
+| `url_submission_id` | 整数 / 外键 | 是 | 物理列，关联 `ai_url_submissions.id`，供 job 直连数据库使用 |
 | `source_url` | URL / 文本 | 是 | 原始 URL |
 | `final_url` | URL / 文本 | 否 | 抓取后的最终 URL |
 | `platform` | 单选 | 是 | 平台 |
@@ -70,7 +70,7 @@
 
 推荐索引:
 
-- `url_submission`。
+- `url_submission_id`。
 - `platform + archive_date`。
 - `title` 普通索引，方便搜索。
 
@@ -184,6 +184,7 @@ ai_url_submissions
 ```
 
 推荐给 `ai_processed_assets.url_submission_id` 增加唯一索引，这样 flow 可以用 upsert 覆盖同一条提交的最新处理结果。
+在 NocoBase 里即使再配置关系字段，也建议先确认数据库中确实存在同名物理列 `url_submission_id`。
 
 Prefect 适合作为调度层的原因:
 
