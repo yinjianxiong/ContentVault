@@ -49,7 +49,7 @@ analysis/frames/
 
 配套图示:
 
-![ContentVault 全自动化流程](docs/contentvault_automation_flow.svg)
+![ContentVault 全自动化流程](docs/contentvault_auto_flowchart_hd.png)
 
 Mermaid 源文件和文字版说明:
 
