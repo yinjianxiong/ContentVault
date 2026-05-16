@@ -9,6 +9,7 @@ from pathlib import Path
 from .extract import extract_page
 from .items import find_media_files, resolve_item_title
 from .summarize import build_summary
+from .transcribe import transcribe_item
 
 
 @dataclass
@@ -39,6 +40,7 @@ def analyze_item(item_dir: Path, *, frame_count: int = 6) -> AnalyzeResult:
     )
 
     media_files = find_media_files(item_dir)
+    transcribe_item(item_dir)
     frame_paths = _extract_frames(media_files[0], item_dir, frame_count) if media_files else []
     brief_path = item_dir / "analysis" / "codex_brief.md"
     brief_path.parent.mkdir(parents=True, exist_ok=True)
@@ -176,6 +178,14 @@ def _build_codex_brief(
         lines.extend(f"  - `{path.resolve()}`" for path in media_files)
     else:
         lines.append("- 本地视频: 未找到")
+
+    transcript_path = item_dir / "analysis" / "transcript.original.md"
+    translated_subtitles = sorted((item_dir / "analysis").glob("subtitles.*.srt"))
+    if transcript_path.exists():
+        lines.append(f"- 转写文本: `{transcript_path.resolve()}`")
+    if translated_subtitles:
+        lines.append("- 字幕文件:")
+        lines.extend(f"  - `{path.resolve()}`" for path in translated_subtitles)
 
     if description:
         lines.extend(["", "## 页面描述", "", description])

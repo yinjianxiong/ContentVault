@@ -38,6 +38,8 @@ raw.html
 
 ```text
 summary.md
+analysis/transcript.original.md
+analysis/subtitles.original.srt
 analysis/codex_brief.md
 analysis/frames/
 ```
@@ -131,7 +133,11 @@ data/YYYY-MM-DD/platform_slug/
   raw.html
   media/
   analysis/
+    audio/
+      source.mp3
     codex_brief.md
+    transcript.original.md
+    subtitles.original.srt
     frames/
 ```
 
@@ -155,6 +161,12 @@ python3 -m content_mvp add "复制来的链接" --open-downie
 
 ```bash
 python3 -m content_mvp analyze data/YYYY-MM-DD/platform_slug
+```
+
+只对已有视频生成本地机器转写和原文字幕:
+
+```bash
+python3 -m content_mvp transcribe data/YYYY-MM-DD/platform_slug
 ```
 
 查看归档内容:
@@ -187,3 +199,4 @@ python3 -m playwright install chromium
 - `yt-dlp`: 非 Downie 路径下的媒体下载尝试。
 - `playwright`: 动态页面渲染。
 - `prefect` / `prefect-sqlalchemy` / `pymysql`: 数据库 job 和调度。
+- `faster-whisper`: 本地机器转写与原文字幕生成，默认使用 `turbo` 模型。

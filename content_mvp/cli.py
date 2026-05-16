@@ -17,6 +17,7 @@ from .media import (
 from .nocobase import build_processed_asset_payload
 from .obsidian import export_to_obsidian
 from .pipeline import ArchiveOptions, archive_link
+from .transcribe import transcribe_item
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -121,6 +122,12 @@ def build_parser() -> argparse.ArgumentParser:
     )
     nocobase_payload.add_argument("path", help="An item directory or a day directory")
 
+    transcribe = subparsers.add_parser(
+        "transcribe",
+        help="Generate local machine transcript and source-language subtitles for archived videos",
+    )
+    transcribe.add_argument("path", help="An item directory or a day directory")
+
     return parser
 
 
@@ -215,6 +222,21 @@ def main(argv: list[str] | None = None) -> int:
             for item_dir in _iter_item_dirs(Path(args.path))
         ]
         print(json.dumps(payloads, ensure_ascii=False, indent=2))
+        return 0
+
+    if args.command == "transcribe":
+        for item_dir in _iter_item_dirs(Path(args.path)):
+            result = transcribe_item(item_dir)
+            print(f"{item_dir}")
+            print(f"  状态: {result.status}")
+            if result.reason:
+                print(f"  原因: {result.reason}")
+            if result.source_language:
+                print(f"  原始语言: {result.source_language}")
+            if result.transcript_path:
+                print(f"  转写: {result.transcript_path}")
+            if result.original_srt_path:
+                print(f"  原文字幕: {result.original_srt_path}")
         return 0
 
     parser.print_help()

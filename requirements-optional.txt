@@ -9,3 +9,6 @@ playwright
 prefect
 prefect-sqlalchemy
 pymysql
+
+# Local speech-to-text for transcript and source-language subtitles.
+faster-whisper
