@@ -17,6 +17,7 @@ from .media import (
 from .nocobase import build_processed_asset_payload
 from .obsidian import export_to_obsidian
 from .pipeline import ArchiveOptions, archive_link
+from .prefect_jobs import update_obsidian_note_path, upsert_existing_processed_asset
 from .transcribe import transcribe_item
 
 
@@ -196,22 +197,26 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "analyze":
         results = analyze_archive(Path(args.path), frame_count=args.frames)
         for result in results:
+            upsert_existing_processed_asset(result.item_dir)
             print(f"已分析: {result.item_dir}")
             print(f"  标题: {result.title}")
             print(f"  总结: {result.summary_path}")
             print(f"  Codex 分析包: {result.brief_path}")
+            print(f"  Creator 报告: {result.creator_report_path}")
             if result.frame_paths:
                 print(f"  抽帧: {len(result.frame_paths)} 张")
         if args.export_obsidian:
             notes = export_to_obsidian(Path(args.path), Path(args.export_obsidian))
-            for note in notes:
+            for item_dir, note in notes:
+                update_obsidian_note_path(item_dir, note)
                 print(f"已导出: {note}")
             print(f"共导出 {len(notes)} 条笔记")
         return 0
 
     if args.command == "export-obsidian":
         notes = export_to_obsidian(Path(args.path), Path(args.vault))
-        for note in notes:
+        for item_dir, note in notes:
+            update_obsidian_note_path(item_dir, note)
             print(f"已导出: {note}")
         print(f"共导出 {len(notes)} 条笔记")
         return 0

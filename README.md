@@ -41,6 +41,7 @@ summary.md
 analysis/transcript.original.md
 analysis/subtitles.original.srt
 analysis/codex_brief.md
+analysis/creator_report.md
 analysis/frames/
 ```
 
@@ -144,6 +145,7 @@ data/YYYY-MM-DD/platform_slug/
     audio/
       source.mp3
     codex_brief.md
+    creator_report.md
     transcript.original.md
     subtitles.original.srt
     frames/
@@ -194,6 +196,8 @@ python3 -m content_mvp nocobase-payload data/YYYY-MM-DD/platform_slug
 ```bash
 python3 -m content_mvp export-obsidian data/YYYY-MM-DD --vault "/Users/jianxiongyin/MacTools/Obsidian/本地纪事/14_ContentVault"
 ```
+
+导出成功后，系统会把笔记绝对路径写回 `meta.json.obsidian_note_path`，并同步更新 `ai_processed_assets.obsidian_note_path`。
 
 ## 可选依赖
 

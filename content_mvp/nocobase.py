@@ -31,7 +31,7 @@ def build_processed_asset_payload(item_dir: Path) -> dict:
         "summary_md": _read_optional(item_dir / "summary.md"),
         "codex_brief_md": _read_optional(item_dir / "analysis" / "codex_brief.md"),
         "creator_report_md": _read_optional(item_dir / "analysis" / "creator_report.md"),
-        "obsidian_note_path": "",
+        "obsidian_note_path": meta.get("obsidian_note_path") or "",
         "raw_meta": meta,
     }
 

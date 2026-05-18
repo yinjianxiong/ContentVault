@@ -125,6 +125,15 @@ ON DUPLICATE KEY UPDATE
     updatedAt = NOW()
 """
 
+UPDATE_OBSIDIAN_NOTE_PATH_SQL = """
+UPDATE ai_processed_assets
+SET
+    obsidian_note_path = :obsidian_note_path,
+    raw_meta = :raw_meta,
+    updatedAt = NOW()
+WHERE local_folder = :local_folder
+"""
+
 
 def process_pending_urls_flow(
     *,
@@ -263,6 +272,55 @@ def _to_db_params(submission_id: int, payload: dict[str, Any]) -> dict[str, Any]
         "cover_paths": json.dumps(payload["cover_paths"], ensure_ascii=False),
         "raw_meta": json.dumps(payload["raw_meta"], ensure_ascii=False),
     }
+
+
+def update_obsidian_note_path(
+    item_dir: Path,
+    note_path: Path,
+    *,
+    db_block_name: str = "local-mysql-3307",
+) -> None:
+    from prefect_sqlalchemy import SqlAlchemyConnector
+
+    meta_path = item_dir / "meta.json"
+    meta = json.loads(meta_path.read_text(encoding="utf-8"))
+    meta["obsidian_note_path"] = str(note_path.resolve())
+    meta_path.write_text(json.dumps(meta, ensure_ascii=False, indent=2), encoding="utf-8")
+
+    with SqlAlchemyConnector.load(db_block_name) as database_block:
+        database_block.execute(
+            UPDATE_OBSIDIAN_NOTE_PATH_SQL,
+            parameters={
+                "obsidian_note_path": str(note_path.resolve()),
+                "raw_meta": json.dumps(meta, ensure_ascii=False),
+                "local_folder": str(item_dir.resolve()),
+            },
+        )
+
+
+def upsert_existing_processed_asset(
+    item_dir: Path,
+    *,
+    db_block_name: str = "local-mysql-3307",
+) -> bool:
+    from prefect_sqlalchemy import SqlAlchemyConnector
+
+    payload = build_processed_asset_payload(item_dir)
+    with SqlAlchemyConnector.load(db_block_name) as database_block:
+        rows = database_block.fetch_many(
+            "SELECT url_submission FROM ai_processed_assets WHERE local_folder = :local_folder LIMIT 1",
+            parameters={"local_folder": str(item_dir.resolve())},
+            size=1,
+        )
+        if not rows:
+            return False
+        row = rows[0]
+        submission_id = row._mapping["url_submission"] if hasattr(row, "_mapping") else row[0]
+        database_block.execute(
+            UPSERT_PROCESSED_ASSET_SQL,
+            parameters=_to_db_params(submission_id, payload),
+        )
+    return True
 
 
 def _download_with_downie(

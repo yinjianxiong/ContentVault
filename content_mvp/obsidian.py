@@ -7,8 +7,8 @@ from pathlib import Path
 from .items import find_media_files, resolve_item_title
 
 
-def export_to_obsidian(path: Path, vault: Path) -> list[Path]:
-    exported: list[Path] = []
+def export_to_obsidian(path: Path, vault: Path) -> list[tuple[Path, Path]]:
+    exported: list[tuple[Path, Path]] = []
     for item_dir in _iter_item_dirs(path):
         meta_path = item_dir / "meta.json"
         meta = json.loads(meta_path.read_text(encoding="utf-8"))
@@ -20,7 +20,7 @@ def export_to_obsidian(path: Path, vault: Path) -> list[Path]:
             _build_note(item_dir, meta, title),
             encoding="utf-8",
         )
-        exported.append(note_path)
+        exported.append((item_dir, note_path))
     return exported
 
 

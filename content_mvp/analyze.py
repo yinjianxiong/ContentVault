@@ -18,6 +18,7 @@ class AnalyzeResult:
     title: str
     summary_path: Path
     brief_path: Path
+    creator_report_path: Path
     frame_paths: list[Path]
 
 
@@ -48,11 +49,17 @@ def analyze_item(item_dir: Path, *, frame_count: int = 6) -> AnalyzeResult:
         _build_codex_brief(item_dir, meta, extracted, title, media_files, frame_paths),
         encoding="utf-8",
     )
+    creator_report_path = item_dir / "analysis" / "creator_report.md"
+    creator_report_path.write_text(
+        _build_creator_report(item_dir, meta, extracted, title),
+        encoding="utf-8",
+    )
     return AnalyzeResult(
         item_dir=item_dir,
         title=title,
         summary_path=summary_path,
         brief_path=brief_path,
+        creator_report_path=creator_report_path,
         frame_paths=frame_paths,
     )
 
@@ -217,3 +224,63 @@ def _build_codex_brief(
         ]
     )
     return "\n".join(lines).strip() + "\n"
+
+
+def _build_creator_report(
+    item_dir: Path,
+    meta: dict,
+    extracted: dict,
+    title: str,
+) -> str:
+    transcript = _read_optional(item_dir / "analysis" / "transcript.original.md")
+    note = (meta.get("note") or "").strip()
+    description = (meta.get("description") or extracted.get("description") or "").strip()
+    source_url = meta.get("final_url") or meta.get("requested_url") or ""
+    evidence = _transcript_excerpt(transcript) if transcript else description
+
+    lines = [
+        f"# Creator Report: {title}",
+        "",
+        "## 素材判断",
+        "",
+        f"- 平台: {meta.get('platform') or 'unknown'}",
+        f"- 原始链接: {source_url}",
+        f"- 采集备注: {note or '无'}",
+        "",
+        "## 内容概览",
+        "",
+        evidence or "当前素材暂无可用正文或转写，建议优先结合视频画面人工复核。",
+        "",
+        "## 可复用价值",
+        "",
+        "- 观察开场 3 秒是否存在明确钩子。",
+        "- 观察内容依赖的是观点、情绪、视觉奇观，还是熟悉素材再包装。",
+        "- 二创时优先复用结构、节奏和表达机制，避免照搬原片。",
+        "",
+        "## 二创建议",
+        "",
+        "1. 先提炼原片最小可复用模板，再替换成自己的题材。",
+        "2. 如果原片主要靠画面成立，优先做视觉灵感归档，而不是强行改成口播。",
+        "3. 如果原片有清晰对白或观点，可继续扩展成脚本、标题和评论区话题。",
+        "",
+        "## 风险提醒",
+        "",
+        "- 发布前复核字幕、人物、事实和版权素材来源。",
+        "- 使用经典 IP、歌曲或原片镜头时，注意平台版权风险。",
+    ]
+    return "\n".join(lines).strip() + "\n"
+
+
+def _read_optional(path: Path) -> str:
+    if not path.exists():
+        return ""
+    return path.read_text(encoding="utf-8").strip()
+
+
+def _transcript_excerpt(transcript: str, *, max_lines: int = 8) -> str:
+    lines = [
+        line
+        for line in transcript.splitlines()
+        if line.strip() and not line.startswith("# ") and not line.startswith("- Language:")
+    ]
+    return "\n".join(lines[:max_lines])

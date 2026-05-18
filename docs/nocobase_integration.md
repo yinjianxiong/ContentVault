@@ -111,7 +111,7 @@ pending / processing
 2. 将记录更新为 `processing`，写入 `picked_at`。
 3. 调用现有归档流程，把素材保存到 `data/YYYY-MM-DD/...`。
 4. 下载或导入视频，生成 `media/`。
-5. 调用 `analyze`，生成 `summary.md`、`analysis/codex_brief.md`、抽帧。
+5. 调用 `analyze`，生成 `summary.md`、`analysis/codex_brief.md`、`analysis/creator_report.md`、抽帧。
 6. 生成 `ai_processed_assets` payload 并写入展示表。
 7. 将 URL 收集记录更新为 `succeeded` 和 `processed_at`。
 8. 任一步失败则写 `failed`、`last_error`、`retry_count + 1`。
@@ -195,6 +195,7 @@ ai_url_submissions
 - `duration_seconds` 是 `DECIMAL(10, 3)`。
 - `file_size_bytes` 是 `BIGINT`。
 - `summary_md`、`codex_brief_md`、`creator_report_md` 是 `TEXT`。
+- 执行 `export-obsidian` 后，系统会把导出的笔记路径同步写入 `meta.json.obsidian_note_path` 和 `ai_processed_assets.obsidian_note_path`。
 
 `raw_meta` 目前保留为 `TEXT` 也可以正常工作；如果后面需要在 MySQL 里按元数据字段检索，再改成 `JSON` 更合适。
 
