@@ -101,6 +101,14 @@ content_mvp/prefect_jobs.py
 arch -arm64 python3 -c "from content_mvp.prefect_jobs import process_pending_urls_flow; print(process_pending_urls_flow(limit=1, use_downie=True, downie_wait=180))"
 ```
 
+在本机启动 5 分钟自动处理服务:
+
+```bash
+arch -arm64 python3 serve_prefect.py
+```
+
+该服务会创建 deployment `process-pending-urls-every-5m`，每 5 分钟最多处理 1 条 `pending` URL。因为下载链路依赖本机 GUI，`serve_prefect.py` 需要在这台 Mac 的图形会话中持续运行。
+
 典型状态流:
 
 ```text
